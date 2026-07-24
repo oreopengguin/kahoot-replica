@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { ANSWER_BG, ANSWER_FG, AnswerShape } from "@/components/AnswerShape";
 import { Confetti } from "@/components/Confetti";
+import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import { DistributionChart } from "@/components/DistributionChart";
 import { Podium } from "@/components/Podium";
 import { TimerRing } from "@/components/TimerRing";
@@ -299,16 +300,27 @@ function Intro({
   act: (a: string) => Promise<void>;
 }) {
   const q = state.question!;
+  const seconds = state.msRemaining !== null ? Math.ceil(state.msRemaining / 1000) : null;
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 pb-16 text-center">
       <p className="anim-pop text-sm font-black uppercase tracking-[0.3em] text-mut">
         Question {q.index + 1} of {q.total}
         {q.points === "double" && <span className="ml-2 text-gold">· ⚡ DOUBLE POINTS</span>}
-        {q.multiSelect && <span className="ml-2 text-brand">· select all that apply</span>}
       </p>
+      <QuestionTypeBadge type={q.type} multiSelect={q.multiSelect} size="lg" className="anim-pop mt-4" />
       {q.emoji && <div className="anim-float mt-4 text-7xl">{q.emoji}</div>}
       <h1 className="anim-slide-up mt-4 max-w-3xl text-3xl font-black sm:text-5xl">{q.text}</h1>
-      <div className="anim-pulse-soft mt-8 text-lg font-bold text-mut">Get ready…</div>
+      {seconds !== null && (
+        <div
+          key={seconds}
+          className="anim-pop mt-8 font-mono text-7xl font-black text-brand"
+          role="timer"
+          aria-label={`Answering opens in ${seconds} seconds`}
+        >
+          {seconds}
+        </div>
+      )}
+      <div className="anim-pulse-soft mt-2 text-lg font-bold text-mut">Get ready…</div>
       <button onClick={() => act("skip")} className="mt-4 rounded-full bg-surface px-5 py-2 text-sm font-bold shadow-card hover:scale-105">
         Skip countdown ⏩
       </button>
@@ -338,6 +350,7 @@ function Answering({
       </div>
 
       <div className="mt-4 flex flex-1 flex-col items-center justify-center">
+        <QuestionTypeBadge type={q.type} multiSelect={q.multiSelect} className="mb-4" />
         {q.image && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={q.image} alt="" className="mb-4 max-h-56 rounded-2xl object-contain shadow-card" />

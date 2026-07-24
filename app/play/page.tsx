@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { ANSWER_BG, ANSWER_FG, AnswerShape, SHAPE_NAMES } from "@/components/AnswerShape";
 import { Confetti } from "@/components/Confetti";
+import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
 import {
   api,
   clearPlayerSession,
@@ -311,6 +312,21 @@ function GameScreen({
       )}
       {state.phase === "intro" && state.question && (
         <FullScreen emoji={state.question.emoji ?? "🧠"} title={state.question.text} inline>
+          <QuestionTypeBadge
+            type={state.question.type}
+            multiSelect={state.question.multiSelect}
+            className="anim-pop mt-4"
+          />
+          {state.msRemaining !== null && (
+            <div
+              key={Math.ceil(state.msRemaining / 1000)}
+              className="anim-pop mt-5 font-mono text-6xl font-black text-brand"
+              role="timer"
+              aria-label={`Answering opens in ${Math.ceil(state.msRemaining / 1000)} seconds`}
+            >
+              {Math.ceil(state.msRemaining / 1000)}
+            </div>
+          )}
           <p className="anim-pulse-soft mt-2 font-bold text-mut">
             Get ready… question {state.question.index + 1} of {state.question.total}
           </p>
@@ -373,6 +389,8 @@ function AnswerPad({
 
   const totalMs = q.timeLimit * 1000;
   const frac = state.msRemaining !== null ? Math.max(0, Math.min(1, state.msRemaining / totalMs)) : 1;
+  const seconds = state.msRemaining !== null ? Math.ceil(state.msRemaining / 1000) : null;
+  const urgent = seconds !== null && seconds <= 5;
 
   const submit = async (payload: { choices?: number[]; text?: string; sliderValue?: number }) => {
     if (submitting) return;
@@ -392,12 +410,28 @@ function AnswerPad({
 
   return (
     <div className="flex flex-1 flex-col px-3 pb-4">
-      <div className="mx-1 mb-3 h-2.5 overflow-hidden rounded-full bg-surface-2" aria-hidden>
-        <div
-          className={`timer-bar h-full rounded-full ${frac < 0.25 ? "bg-bad" : "bg-brand"}`}
-          style={{ width: `${frac * 100}%` }}
-        />
+      <div className="mx-1 mb-3 flex items-center gap-3">
+        <span
+          className={`min-w-11 text-center font-mono text-2xl font-black ${
+            urgent ? "anim-pulse-soft text-bad" : "text-ink"
+          }`}
+          role="timer"
+          aria-label={seconds !== null ? `${seconds} seconds remaining` : "Time remaining"}
+        >
+          {seconds ?? "–"}
+        </span>
+        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2" aria-hidden>
+          <div
+            className={`timer-bar h-full rounded-full ${urgent ? "bg-bad" : "bg-brand"}`}
+            style={{ width: `${frac * 100}%` }}
+          />
+        </div>
       </div>
+      {q.multiSelect && (
+        <div className="mb-2 text-center">
+          <QuestionTypeBadge type={q.type} multiSelect size="sm" />
+        </div>
+      )}
       <p className="mb-3 text-center text-lg font-bold leading-snug">{q.text}</p>
 
       {(q.type === "quiz" || q.type === "truefalse" || q.type === "poll") && (
