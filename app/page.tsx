@@ -8,7 +8,7 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 const FEATURES = [
   { emoji: "🎮", title: "Live games for 400 players", text: "Host huge lobbies with a 6-digit PIN — no accounts, no player limit tricks, no paywall." },
-  { emoji: "🧠", title: "Five question types", text: "Multiple choice, multi-select, true/false, type-the-answer, sliders, and polls." },
+  { emoji: "🧠", title: "Every question type", text: "Multiple choice, multi-select, true/false, type-the-answer, sliders, and polls." },
   { emoji: "⚡", title: "Speed-based scoring", text: "Up to 1,000 points per question — answer faster to earn more, and build answer streaks for bonus points." },
   { emoji: "🏆", title: "Podium & reports", text: "Top-3 podium finale with confetti, plus a full per-player and per-question report you can download as CSV." },
   { emoji: "🎨", title: "Three themes", text: "Light, dark, and a colorblind-friendly high-contrast mode. Answer buttons use distinct shapes, not just colors." },
