@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { ANSWER_BG, ANSWER_FG, AnswerShape } from "@/components/AnswerShape";
 import { isTeacher } from "@/lib/client";
+import { imageFileToDataUrl } from "@/lib/images";
 import { blankQuestion, getSet, newId, upsertSet } from "@/lib/sets";
 import { Question, QuestionSet, QuestionType } from "@/lib/types";
 
@@ -50,6 +51,7 @@ export default function EditorPage() {
   const [set, setSet] = useState<QuestionSet | null>(null);
   const [selected, setSelected] = useState(0);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -70,8 +72,14 @@ export default function EditorPage() {
       const next = updater(structuredClone(prev));
       if (saveTimer.current) clearTimeout(saveTimer.current);
       saveTimer.current = setTimeout(() => {
-        upsertSet(next);
-        setSavedAt(Date.now());
+        try {
+          upsertSet(next);
+          setSavedAt(Date.now());
+          setSaveError(null);
+        } catch {
+          // Almost certainly a localStorage quota error from large images.
+          setSaveError("Storage is full — remove or shrink some uploaded images");
+        }
       }, 400);
       return next;
     });
@@ -155,8 +163,11 @@ export default function EditorPage() {
           </Link>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-mut" aria-live="polite">
-            {savedAt ? "✓ Saved" : "Autosaves as you type"}
+          <span
+            className={`text-xs ${saveError ? "font-bold text-bad" : "text-mut"}`}
+            aria-live="polite"
+          >
+            {saveError ? `⚠ ${saveError}` : savedAt ? "✓ Saved" : "Autosaves as you type"}
           </span>
           <ThemeSwitcher withSound={false} />
         </div>
@@ -301,15 +312,7 @@ export default function EditorPage() {
                 </label>
               </div>
 
-              <label className="mt-3 block">
-                <span className="text-xs font-bold uppercase tracking-wider text-mut">Image URL (optional)</span>
-                <input
-                  value={q.image ?? ""}
-                  onChange={(e) => updateQ(selected, (qq) => (qq.image = e.target.value.trim() || undefined))}
-                  placeholder="https://…"
-                  className="mt-1 w-full rounded-xl border-2 border-surface-2 bg-surface-2 px-3 py-2 text-sm focus:border-brand"
-                />
-              </label>
+              <ImageField q={q} index={selected} updateQ={updateQ} />
 
               <div className="mt-6">
                 {(q.type === "quiz" || q.type === "poll") && (
@@ -332,6 +335,92 @@ export default function EditorPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function ImageField({ q, index, updateQ }: { q: Question; index: number; updateQ: UpdateQ }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isUpload = q.image?.startsWith("data:") ?? false;
+  const sizeKb = isUpload ? Math.round((q.image!.length * 0.75) / 1024) : null;
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const dataUrl = await imageFileToDataUrl(file);
+      updateQ(index, (qq) => (qq.image = dataUrl));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not process that image");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="mt-3">
+      <span className="text-xs font-bold uppercase tracking-wider text-mut">Image (optional)</span>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+      {q.image ? (
+        <div className="mt-2 flex flex-wrap items-center gap-3 rounded-2xl bg-surface-2 p-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={q.image}
+            alt="Question image preview"
+            className="max-h-28 max-w-[220px] rounded-xl object-contain shadow-card"
+          />
+          <div className="flex flex-col gap-2">
+            <span className="text-xs text-mut">
+              {isUpload ? `Uploaded image · ~${sizeKb} KB (stored with the set)` : "Linked from URL"}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={busy}
+                className="rounded-xl bg-surface px-3 py-1.5 text-sm font-bold shadow-card hover:bg-brand-soft disabled:opacity-50"
+              >
+                {busy ? "Compressing…" : "Replace"}
+              </button>
+              <button
+                onClick={() => updateQ(index, (qq) => (qq.image = undefined))}
+                className="rounded-xl bg-surface px-3 py-1.5 text-sm font-bold shadow-card hover:bg-bad-soft"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+            className="rounded-xl bg-surface-2 px-4 py-2 text-sm font-bold hover:bg-brand-soft disabled:opacity-50"
+          >
+            {busy ? "Compressing…" : "📷 Upload image"}
+          </button>
+          <span className="text-xs text-mut">PNG, JPG, WEBP, GIF… — or paste a URL:</span>
+          <input
+            value=""
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              if (v) updateQ(index, (qq) => (qq.image = v));
+            }}
+            placeholder="https://…"
+            aria-label="Image URL"
+            className="min-w-40 flex-1 rounded-xl border-2 border-surface-2 bg-surface-2 px-3 py-2 text-sm focus:border-brand"
+          />
+        </div>
+      )}
+      {error && (
+        <p role="alert" className="mt-2 rounded-xl bg-bad-soft px-3 py-1.5 text-sm font-bold text-bad">
+          {error}
+        </p>
+      )}
+    </div>
   );
 }
 

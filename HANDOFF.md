@@ -54,6 +54,16 @@ arrives. 150 concurrent simulated players complete a full game with 0 errors.
 - Host actions: `start | next | skip | lock | unlock | kick | end`
   (POST `/api/games/[pin]/host`, guarded by `hostToken`).
 
+**Question images.** Teachers can upload any browser-decodable image (png/jpg/webp/gif/…)
+in the editor. `lib/images.ts` downscales and re-encodes it client-side (≤150 KB originals
+kept as-is to preserve transparency/animation; larger ones become ≤~350 KB JPEGs) and stores
+it as a data URL inside the question — so sets stay self-contained through localStorage,
+export, and import. On game creation, `createGame` extracts data URLs into `game.images` and
+rewrites `question.image` to `/api/games/[pin]/image/[id]`, which serves the bytes with
+immutable cache headers — polled snapshots stay small and each client downloads an image
+once. Pasting an external image URL still works and is passed through untouched. The editor
+surfaces localStorage quota exhaustion as a "storage full" warning in the header.
+
 **Scoring** (in `submitAnswer`): base 1000 (double 2000, none 0) × speed factor
 (1 − elapsed/timeLimit/2, i.e. full → 50% at the buzzer), + streak bonus
 (min(streak,5) × 100) when enabled. Slider: full points within tolerance, partial credit
@@ -83,6 +93,7 @@ app/
   api/games/[pin]/answer    POST submit answer
   api/games/[pin]/host      POST host actions
   api/games/[pin]/report    GET report (JSON or ?format=csv)
+  api/games/[pin]/image/[id] GET serves uploaded question images (see below)
 lib/
   types.ts                  All shared types (Question, GameSettings, snapshots)
   store.ts                  THE game engine (state machine, scoring, snapshots, reports)
@@ -90,6 +101,7 @@ lib/
   client.ts                 fetch helper, usePoll hook, teacher/player/host session helpers
   names.ts                  Nickname generator + profanity filter (client + server)
   sounds.ts                 WebAudio synth SFX + lobby music (no assets)
+  images.ts                 Client-side image upload: decode → downscale → JPEG data URL
 components/
   ThemeProvider/Switcher    3 themes: light / dark / colorblind (data-theme on <html>)
   AnswerShape.tsx           The 4 answer identities (color classes + SVG shapes)

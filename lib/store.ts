@@ -56,6 +56,8 @@ export interface Game {
   answeringOpenedAt: number | null;
   locked: boolean;
   players: Map<string, ServerPlayer>;
+  /** Uploaded question images (id → data URL), served via /api/games/[pin]/image/[id]. */
+  images: Map<string, string>;
   createdAt: number;
   endedAt: number | null;
 }
@@ -108,8 +110,21 @@ export function createGame(set: QuestionSet, settings: Partial<GameSettings>): {
   const now = Date.now();
   gcGames(now);
   const merged: GameSettings = { ...DEFAULT_SETTINGS, ...settings };
+  const pin = makePin();
 
   let questions = set.questions.map((q) => ({ ...q, choices: [...q.choices], correct: [...q.correct] }));
+
+  // Uploaded images arrive as data URLs inside the set. Park them in the game
+  // and rewrite to a short cached URL so polled snapshots stay small.
+  const images = new Map<string, string>();
+  questions = questions.map((q, i) => {
+    if (q.image?.startsWith("data:image/")) {
+      const id = `q${i}-${randId(8)}`;
+      images.set(id, q.image);
+      return { ...q, image: `/api/games/${pin}/image/${id}` };
+    }
+    return q;
+  });
   if (merged.randomizeQuestions) questions = shuffled(questions);
   if (merged.randomizeAnswers) {
     questions = questions.map((q) => {
@@ -124,7 +139,7 @@ export function createGame(set: QuestionSet, settings: Partial<GameSettings>): {
   }
 
   const game: Game = {
-    pin: makePin(),
+    pin,
     hostToken: randId(),
     setTitle: set.title,
     questions,
@@ -135,6 +150,7 @@ export function createGame(set: QuestionSet, settings: Partial<GameSettings>): {
     answeringOpenedAt: null,
     locked: false,
     players: new Map(),
+    images,
     createdAt: now,
     endedAt: null,
   };

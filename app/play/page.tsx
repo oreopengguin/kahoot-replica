@@ -432,6 +432,14 @@ function AnswerPad({
           <QuestionTypeBadge type={q.type} multiSelect size="sm" />
         </div>
       )}
+      {q.image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={q.image}
+          alt=""
+          className="mx-auto mb-2 max-h-32 rounded-xl object-contain shadow-card"
+        />
+      )}
       <p className="mb-3 text-center text-lg font-bold leading-snug">{q.text}</p>
 
       {(q.type === "quiz" || q.type === "truefalse" || q.type === "poll") && (
