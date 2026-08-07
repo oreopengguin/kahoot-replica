@@ -543,6 +543,7 @@ export function playerSnapshot(g: Game, p: ServerPlayer): PlayerStateSnapshot {
             rank: meRanked?.rank ?? 0,
             scoreAfter: p.score,
             correctChoices: q.type === "poll" ? [] : q.correct,
+            myChoices: myAnswer?.choices,
             acceptedAnswers: q.type === "typeanswer" ? q.acceptedAnswers : undefined,
             sliderCorrect: q.type === "slider" ? q.sliderCorrect : undefined,
           }

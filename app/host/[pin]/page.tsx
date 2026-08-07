@@ -8,6 +8,7 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { ANSWER_BG, ANSWER_FG, AnswerShape } from "@/components/AnswerShape";
 import { Confetti } from "@/components/Confetti";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
+import { RevealChoices } from "@/components/RevealChoices";
 import { DistributionChart } from "@/components/DistributionChart";
 import { Podium } from "@/components/Podium";
 import { TimerRing } from "@/components/TimerRing";
@@ -406,6 +407,7 @@ function RevealAndScoreboard({
   const q = state.question!;
   const isReveal = state.phase === "reveal";
   const isLast = state.currentIndex >= state.questionCount - 1;
+  const openEnded = q.type === "typeanswer" || q.type === "slider";
   const top = useMemo(() => state.players.slice(0, 8), [state.players]);
 
   return (
@@ -415,13 +417,28 @@ function RevealAndScoreboard({
           <h1 className="anim-slide-up mt-2 max-w-3xl text-center text-2xl font-black sm:text-3xl">
             {q.text}
           </h1>
+          {q.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={q.image} alt="" className="mt-3 max-h-32 rounded-2xl object-contain shadow-card" />
+          )}
           <div className="anim-pop mt-3 rounded-2xl bg-ok-soft px-5 py-2 text-center font-bold text-ok">
             {answerSummary(state)}
           </div>
-          <div className="mt-6 w-full max-w-3xl rounded-3xl bg-surface p-6 shadow-card">
-            <DistributionChart reveal={state.reveal!} type={q.type} choices={q.choices} />
-            <p className="mt-4 text-center text-sm text-mut">
+          <div className="mt-4 w-full max-w-4xl">
+            {openEnded ? (
+              <div className="rounded-3xl bg-surface p-6 shadow-card">
+                <DistributionChart reveal={state.reveal!} type={q.type} choices={q.choices} />
+              </div>
+            ) : (
+              <RevealChoices
+                question={q}
+                correct={state.reveal!.correct}
+                distribution={state.reveal!.distribution}
+              />
+            )}
+            <p className="mt-3 text-center text-sm text-mut">
               {state.reveal!.answeredCount} of {state.reveal!.totalPlayers} answered
+              {!openEnded && " · numbers show how many picked each answer"}
             </p>
           </div>
         </>

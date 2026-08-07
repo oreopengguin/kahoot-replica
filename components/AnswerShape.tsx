@@ -3,6 +3,8 @@
 
 export const ANSWER_BG = ["bg-a0", "bg-a1", "bg-a2", "bg-a3"];
 export const ANSWER_FG = ["text-a0fg", "text-a1fg", "text-a2fg", "text-a3fg"];
+/** The answer colors as foreground, for tinting icons on a neutral card. */
+export const ANSWER_TEXT = ["text-a0", "text-a1", "text-a2", "text-a3"];
 export const SHAPE_NAMES = ["Triangle", "Diamond", "Circle", "Square"];
 
 export function AnswerShape({ index, className = "h-6 w-6" }: { index: number; className?: string }) {

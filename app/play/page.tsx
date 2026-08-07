@@ -8,6 +8,7 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { ANSWER_BG, ANSWER_FG, AnswerShape, SHAPE_NAMES } from "@/components/AnswerShape";
 import { Confetti } from "@/components/Confetti";
 import { QuestionTypeBadge } from "@/components/QuestionTypeBadge";
+import { RevealChoices } from "@/components/RevealChoices";
 import {
   api,
   clearPlayerSession,
@@ -550,14 +551,16 @@ function AnswerPad({
 function ResultScreen({ state }: { state: PlayerStateSnapshot }) {
   const r = state.lastResult;
   const answered = state.answered;
-  const isPoll = state.question?.type === "poll";
+  const q = state.question;
+  const isPoll = q?.type === "poll";
+  const hasChoices = !!q && q.type !== "typeanswer" && q.type !== "slider";
 
   if (!r) return <FullScreen emoji="📊" title="Results…" inline />;
 
   const good = isPoll ? true : r.correct;
   return (
     <div
-      className={`flex flex-1 flex-col items-center justify-center px-6 pb-20 text-center ${
+      className={`flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 pb-10 pt-2 text-center ${
         isPoll ? "" : good && answered ? "bg-ok/10" : "bg-bad/10"
       }`}
     >
@@ -595,19 +598,29 @@ function ResultScreen({ state }: { state: PlayerStateSnapshot }) {
         </>
       )}
 
-      {!isPoll && !good && (
+      {!isPoll && !good && !hasChoices && (
         <p className="mt-3 max-w-sm text-sm font-medium text-mut">
-          {state.question?.type === "typeanswer" && r.acceptedAnswers?.length
+          {q?.type === "typeanswer" && r.acceptedAnswers?.length
             ? `Answer: ${r.acceptedAnswers[0]}`
-            : state.question?.type === "slider"
+            : q?.type === "slider"
               ? `Answer: ${r.sliderCorrect}`
-              : state.question
-                ? `Answer: ${r.correctChoices.map((i) => state.question!.choices[i]).filter(Boolean).join(", ")}`
-                : ""}
+              : ""}
         </p>
       )}
 
-      <div className="mt-8 rounded-2xl bg-surface px-6 py-4 shadow-card">
+      {hasChoices && q && (
+        <div className="mt-5 w-full max-w-sm">
+          <p className="mb-2 text-sm font-bold leading-snug text-mut">{q.text}</p>
+          <RevealChoices
+            question={q}
+            correct={r.correctChoices}
+            myChoices={r.myChoices}
+            size="sm"
+          />
+        </div>
+      )}
+
+      <div className="mt-6 rounded-2xl bg-surface px-6 py-4 shadow-card">
         <p className="font-mono text-3xl font-black">{r.scoreAfter.toLocaleString()}</p>
         <p className="text-sm font-bold text-mut">
           You&apos;re in {ordinal(r.rank)} place

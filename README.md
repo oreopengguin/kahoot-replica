@@ -54,8 +54,13 @@ Open http://localhost:3000.
 
 Correct answers earn up to 1,000 points (2,000 on double-points questions), scaled by speed:
 answering instantly earns full points, and points fall linearly to 50% at the buzzer.
-With streak bonus on, each consecutive correct answer adds +100 × streak (capped at +500).
+The optional answer-streak bonus (off by default — turn it on when you start a game) adds
++100 × streak for consecutive correct answers, capped at +500.
 Sliders give full points within the tolerance and partial credit for near misses.
+
+After each question the correct answer is revealed with the question and all its choices still
+on screen: correct answers stay full-color and ringed, wrong ones are dimmed, and the host
+view shows how many players picked each one.
 
 ## Architecture (short version)
 

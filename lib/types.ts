@@ -62,7 +62,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   randomizeQuestions: false,
   randomizeAnswers: false,
   autoAdvance: false,
-  streakBonus: true,
+  streakBonus: false,
   nicknameGenerator: false,
   showPodium: true,
   lateJoin: true,
@@ -163,6 +163,8 @@ export interface PlayerStateSnapshot {
     rank: number;
     scoreAfter: number;
     correctChoices: number[];
+    /** What this player picked, so the reveal can mark their own answer. */
+    myChoices?: number[];
     acceptedAnswers?: string[];
     sliderCorrect?: number;
   } | null;

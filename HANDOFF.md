@@ -66,7 +66,8 @@ surfaces localStorage quota exhaustion as a "storage full" warning in the header
 
 **Scoring** (in `submitAnswer`): base 1000 (double 2000, none 0) × speed factor
 (1 − elapsed/timeLimit/2, i.e. full → 50% at the buzzer), + streak bonus
-(min(streak,5) × 100) when enabled. Slider: full points within tolerance, partial credit
+(min(streak,5) × 100) when enabled — `streakBonus` defaults to **off** in `DEFAULT_SETTINGS`,
+so the host opts in per game. Slider: full points within tolerance, partial credit
 fading to zero at 25% of range beyond it, halved. Multi-select quiz: all-or-nothing.
 Type answer: normalized (trim/lowercase/collapse-spaces) match against `acceptedAnswers`.
 
@@ -105,6 +106,8 @@ lib/
 components/
   ThemeProvider/Switcher    3 themes: light / dark / colorblind (data-theme on <html>)
   AnswerShape.tsx           The 4 answer identities (color classes + SVG shapes)
+  RevealChoices.tsx         Post-reveal choices: correct ringed, wrong dimmed, vote counts
+  QuestionTypeBadge.tsx     "Multi-select — choose ALL correct answers" etc., shown pre-answer
   Podium.tsx, Confetti.tsx, DistributionChart.tsx, TimerRing.tsx, Logo.tsx
 scripts/
   simulate-players.mjs      Bot harness: creates a game, joins N bots, plays a full game
